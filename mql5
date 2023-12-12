@@ -1,0 +1,85 @@
+mql5
+//+------------------------------------------------------------------+
+//|                        Gold Digger EA MT4                          |
+//|         Expert Advisor for highly profitable gold scalping         |
+//|                    Developer's Site: forexroboteasy.com            |
+//|                        Developed by: Forex Robot Easy Team         |
+//+------------------------------------------------------------------+
+
+// Define input parameters
+input double StopLoss = 50; // Fixed Stop Loss value in points
+input double TakeProfit = 100; // Fixed Take Profit value in points
+input double HiddenTakeProfit = 50; // Hidden Take Profit value in points
+input double LotSize = 0.01; // Trading lot size
+
+//+------------------------------------------------------------------+
+//|                       Expert Advisor Start()                      |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // Check if it is night-trade Forex time
+   if (IsNightTime())
+   {
+      // Calculate desired profit level
+      double profitLevel = Ask + HiddenTakeProfit * Point;
+
+      // Check if profit level is reached
+      if (Bid >= profitLevel)
+      {
+         CloseAllTrades();
+      }
+      else
+      {
+         // Open a new trade
+         OpenTrade();
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//|                      Check if it is night-time                    |
+//+------------------------------------------------------------------+
+bool IsNightTime()
+{
+   int hour = TimeHour(TimeCurrent());
+
+   // Night time is considered between 22:00 and 06:00
+   if (hour >= 22 || hour < 6)
+   {
+      return true;
+   }
+
+   return false;
+}
+
+//+------------------------------------------------------------------+
+//|                     Close all open trades                         |
+//+------------------------------------------------------------------+
+void CloseAllTrades()
+{
+   int total = OrdersTotal();
+
+   // Loop through all open orders
+   for (int i = total - 1; i >= 0; i--)
+   {
+      if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+      {
+         // Close the order
+         OrderClose(OrderTicket(), OrderLots(), Bid, 10, clrRed);
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//|                        Open a new trade                           |
+//+------------------------------------------------------------------+
+void OpenTrade()
+{
+   // Calculate stop loss and take profit levels
+   double stopLossLevel = Bid - StopLoss * Point;
+   double takeProfitLevel = Bid + TakeProfit * Point;
+
+   // Open a buy trade
+   OrderSend(Symbol(), OP_BUY, LotSize, Ask, 10, stopLossLevel, takeProfitLevel);
+}
+
